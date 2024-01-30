@@ -11,4 +11,8 @@ def main():
     
 if __name__ == "__main__":
     main()
-    
+   
+# Create a connection to the database
+
+conn = sqlite3.connect('student.db')
+cur = conn.cur() # enable us to run SQL commands
