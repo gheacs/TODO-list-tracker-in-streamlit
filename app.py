@@ -14,5 +14,7 @@ if __name__ == "__main__":
    
 # Create a connection to the database
 
-conn = sqlite3.connect('student.db')
-cur = conn.cur() # enable us to run SQL commands
+conn = sqlite3.connect('student.sqlite3')
+cursor = conn.cursor() # enable us to run SQL commands
+
+cursor.execute('''CREATE TABLE IF NOT EXISTS student( student_numb INT, name TEXT, undergrad_program TEXT, undergrad_year INT, gpa REAL)''')
