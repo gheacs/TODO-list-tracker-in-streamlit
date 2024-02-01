@@ -32,6 +32,17 @@ def main():
     cursor.execute('SELECT * FROM tasks')
     rows = cursor.fetchall()
     
+        # Create a form for filtering tasks
+    st.sidebar.subheader('Filter Tasks:')
+    category_filter = st.sidebar.selectbox('Filter by Category', ['All'] + list(set([row[2] for row in rows])))  
+    urgency_filter = st.sidebar.selectbox('Filter by Urgency', ['All'] + list(set([row[5] for row in rows])))  
+    
+    # Filter tasks based on user selections
+    filtered_rows = []
+    for row in rows:
+        if (category_filter == 'All' or row[2] == category_filter) and (urgency_filter == 'All' or row[5] == urgency_filter):
+            filtered_rows.append(row)
+            
     # Create an HTML table to display tasks with checkboxes
     table_html = "<table><tr><th>Created At</th><th>Created By</th><th>Category</th><th>Task Name</th><th>Description</th><th>Urgency</th><th>Is Done</th></tr>"
     for row in rows:
