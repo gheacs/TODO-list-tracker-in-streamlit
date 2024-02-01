@@ -44,7 +44,7 @@ def main():
     
     # Create a form to add a new task
     st.subheader('Add a New Task:')
-    created_at = st.text_input('Created at')
+    created_at = st.date_input('Created at', value=datetime.datetime.now())
     created_by = st.text_input('Created by')
     
     category_options = ['School', 'Personal', 'Side Project', 'Others']
@@ -60,7 +60,7 @@ def main():
     
     if st.button("Submit"):
         new_task = TaskSettings(created_at=datetime.datetime.now(), created_by=created_by, category=category, task_name=task_name, description=description, urgency=urgency, is_done=is_done)
-        cursor.execute('INSERT INTO tasks VALUES(?, ?, ?, ?, ?, ?)', (new_task.created_at, new_task.created_by, new_task.category, new_task.task_name, new_task.description, new_task.urgency, new_task.is_done))
+        cursor.execute('INSERT INTO tasks VALUES(?, ?, ?, ?, ?, ?, ?)', (new_task.created_at, new_task.created_by, new_task.category, new_task.task_name, new_task.description, new_task.urgency, new_task.is_done))
         conn.commit()
         st.write('New task added:', new_task)
     
