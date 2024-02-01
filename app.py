@@ -23,7 +23,7 @@ def main():
     cursor = conn.cursor()  # enable us to run SQL commands
 
     cursor.execute('''CREATE TABLE IF NOT EXISTS tasks( created_at DATETIME DEFAULT CURRENT_TIMESTAMP, created_by TEXT, category TEXT, task_name TEXT, description TEXT, urgency TEXT, is_done BOOLEAN)''')
-    #cursor.execute('''INSERT INTO tasks VALUES('2021-10-10 10:00:00', 'Ghea', 'Side Project', 'Send email', 'Send email to doctor', 'high', 0)''')
+    cursor.execute('''INSERT INTO tasks VALUES('2021-10-10 10:00:00', 'Ghea', 'Side Project', 'Send email', 'Send email to doctor', 'high', 0)''')
 
 
     conn.commit()
@@ -45,13 +45,29 @@ def main():
             
     # Create an HTML table to display tasks with checkboxes
     table_html = "<table><tr><th>Created At</th><th>Created By</th><th>Category</th><th>Task Name</th><th>Description</th><th>Urgency</th><th>Is Done</th></tr>"
-    for row in rows:
+    for row in filtered_rows:
         created_at, created_by, category, task_name, description, urgency, is_done = row
         checkbox = f'<input type="checkbox" {("checked" if is_done else "")} disabled>'
-        table_html += f"<tr><td>{created_at}</td><td>{created_by}</td><td>{category}</td><td>{task_name}</td><td>{description}</td><td>{urgency}</td><td>{checkbox}</td></tr>"
+        remove_button = f'<button id="{created_at}" onclick="removeTask(this.id)">Remove</button>'
+        table_html += f"<tr><td>{created_at}</td><td>{created_by}</td><td>{category}</td><td>{task_name}</td><td>{description}</td><td>{urgency}</td><td>{checkbox}</td><td>{remove_button}</td></tr>"
     table_html += "</table>"
     
     st.markdown(table_html, unsafe_allow_html=True)
+    
+    # JavaScript function to remove tasks
+    st.markdown("""
+    <script>
+        function removeTask(id) {
+            fetch(`/remove/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                }
+            });
+        }
+    </script>
+    """, unsafe_allow_html=True)
     
     # Create a form to add a new task
     st.subheader('Add a New Task:')
