@@ -40,3 +40,5 @@ pip install -r requirements.txt
 streamlit run app.py
 
 ```
+## Lesson Learned
+## Questions/Future improvements
