@@ -40,5 +40,6 @@ pip install -r requirements.txt
 streamlit run app.py
 
 ```
-## Lesson Learned
-## Questions/Future improvements
+## Lesson Learned & Question
+I never thought creating a front-end would be that easy. Streamlit is simple and interactive. It's so practical for other projects, and I've been planning to use Streamlit for other side projects.   
+Can Streamlit be integrated with other platforms, such as Figma?
