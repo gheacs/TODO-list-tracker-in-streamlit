@@ -2,6 +2,7 @@ import sqlite3
 import streamlit as st
 from pydantic_settings import BaseSettings
 import datetime
+import pandas as pd
 
 # Define a pydantic settings model
 class TaskSettings(BaseSettings):
@@ -30,11 +31,28 @@ def main():
     cursor.execute('SELECT * FROM tasks')
     rows = cursor.fetchall()
     
-    st.write('Sample values from task table:')
-    for row in rows:
-        st.write(row)
+    st.subheader('Existing Tasks:')
+    df = pd.DataFrame(rows, columns=['created_at', 'created_by', 'category', 'task_name', 'description', 'is_done'])
+    st.write(df)
+    
+    # Create a form to add a new task
+    st.subheader('Add a New Task:')
+    created_by = st.text_input('Created by')
+    
+    category_options = ['School', 'Personal', 'Side Project', 'Others']
+    category = st.selectbox('Category', category_options)
+    task_name = st.text_input('Task name')
+    description = st.text_input('Description')
+    is_done = st.checkbox('Is done?')
+    
+    if st.button("Submit"):
+        new_task = TaskSettings(created_at=datetime.datetime.now(), created_by=created_by, category=category, task_name=task_name, description=description, is_done=is_done)
+        cursor.execute('INSERT INTO tasks VALUES(?, ?, ?, ?, ?, ?)', (new_task.created_at, new_task.created_by, new_task.category, new_task.task_name, new_task.description, new_task.is_done))
+        conn.commit()
+        st.write('New task added:', new_task)
+    
 
 
-
+ 
 if __name__ == "__main__":
     main()
