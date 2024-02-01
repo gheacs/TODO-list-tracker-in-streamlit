@@ -31,9 +31,15 @@ def main():
     cursor.execute('SELECT * FROM tasks')
     rows = cursor.fetchall()
     
-    st.subheader('Existing Tasks:')
-    df = pd.DataFrame(rows, columns=['created_at', 'created_by', 'category', 'task_name', 'description', 'is_done'])
-    st.write(df)
+    # Create an HTML table to display tasks with checkboxes
+    table_html = "<table><tr><th>Created At</th><th>Created By</th><th>Category</th><th>Task Name</th><th>Description</th><th>Is Done</th></tr>"
+    for row in rows:
+        created_at, created_by, category, task_name, description, is_done = row
+        checkbox = f'<input type="checkbox" {("checked" if is_done else "")} disabled>'
+        table_html += f"<tr><td>{created_at}</td><td>{created_by}</td><td>{category}</td><td>{task_name}</td><td>{description}</td><td>{checkbox}</td></tr>"
+    table_html += "</table>"
+    
+    st.markdown(table_html, unsafe_allow_html=True)
     
     # Create a form to add a new task
     st.subheader('Add a New Task:')
