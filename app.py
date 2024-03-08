@@ -2,7 +2,6 @@ import sqlite3
 import streamlit as st
 from pydantic_settings import BaseSettings
 import datetime
-import pandas as pd
 
 # Define a pydantic settings model
 class TaskSettings(BaseSettings):
@@ -16,83 +15,89 @@ class TaskSettings(BaseSettings):
 
 # Create Streamlit app
 def main():
-    st.title(" GHEA's TO DO LIST TRACKER")
-    
+    st.title("GHEA's TO DO LIST TRACKER")
+
     # Create a connection to the database
     conn = sqlite3.connect('task_tracker.sqlite3')
-    cursor = conn.cursor()  # enable us to run SQL commands
+    cursor = conn.cursor()  # Enable us to run SQL commands
 
-    cursor.execute('''CREATE TABLE IF NOT EXISTS tasks( created_at DATETIME DEFAULT CURRENT_TIMESTAMP, created_by TEXT, category TEXT, task_name TEXT, description TEXT, urgency TEXT, is_done BOOLEAN)''')
-    cursor.execute('''INSERT INTO tasks VALUES('2021-10-10 10:00:00', 'Ghea', 'Side Project', 'Send email', 'Send email to doctor', 'high', 0)''')
-
-
+    # Initialize the table if it doesn't exist
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS tasks(
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_by TEXT,
+            category TEXT,
+            task_name TEXT,
+            description TEXT,
+            urgency TEXT,
+            is_done BOOLEAN
+        )
+    ''')
     conn.commit()
 
-    # Display sample values from task table
+    # Retrieve tasks from the database
     cursor.execute('SELECT * FROM tasks')
     rows = cursor.fetchall()
-    
-        # Create a form for filtering tasks
+
+    # Sidebar for task filtering
     st.sidebar.subheader('Filter Tasks:')
-    category_filter = st.sidebar.selectbox('Filter by Category', ['All'] + list(set([row[2] for row in rows])))  
-    urgency_filter = st.sidebar.selectbox('Filter by Urgency', ['All'] + list(set([row[5] for row in rows])))  
-    
-    # Filter tasks based on user selections
-    filtered_rows = []
-    for row in rows:
-        if (category_filter == 'All' or row[2] == category_filter) and (urgency_filter == 'All' or row[5] == urgency_filter):
-            filtered_rows.append(row)
-            
-    # Create an HTML table to display tasks with checkboxes
-    table_html = "<table><tr><th>Created At</th><th>Created By</th><th>Category</th><th>Task Name</th><th>Description</th><th>Urgency</th><th>Is Done</th></tr>"
-    for row in filtered_rows:
-        created_at, created_by, category, task_name, description, urgency, is_done = row
-        checkbox = f'<input type="checkbox" {("checked" if is_done else "")} disabled>'
-        remove_button = f'<button id="{created_at}" onclick="removeTask(this.id)">Remove</button>'
-        table_html += f"<tr><td>{created_at}</td><td>{created_by}</td><td>{category}</td><td>{task_name}</td><td>{description}</td><td>{urgency}</td><td>{checkbox}</td><td>{remove_button}</td></tr>"
-    table_html += "</table>"
-    
-    st.markdown(table_html, unsafe_allow_html=True)
-    
-    # JavaScript function to remove tasks
-    st.markdown("""
-    <script>
-        function removeTask(id) {
-            fetch(`/remove/${id}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                }
-            });
-        }
-    </script>
-    """, unsafe_allow_html=True)
-    
-    # Create a form to add a new task
+    category_filter = st.sidebar.selectbox('Filter by Category', ['All'] + list(set(row[2] for row in rows)))
+    urgency_filter = st.sidebar.selectbox('Filter by Urgency', ['All'] + list(set(row[5] for row in rows)))
+
+    # Filter tasks based on sidebar selections
+    filtered_rows = [row for row in rows if (category_filter == 'All' or row[2] == category_filter) and (urgency_filter == 'All' or row[5] == urgency_filter)]
+
+    # Display tasks and handle removal
+    for index, row in enumerate(filtered_rows):
+        with st.container():
+            cols = st.columns([1, 1, 1, 1, 1, 1, 1, 0.5])
+            created_at, created_by, category, task_name, description, urgency, is_done = row
+            cols[0].write(created_at)
+            cols[1].write(created_by)
+            cols[2].write(category)
+            cols[3].write(task_name)
+            cols[4].write(description)
+            cols[5].write(urgency)
+
+            # Generate unique keys using the row index
+            checkbox_key = f"{created_at}_{task_name}_{index}"
+            remove_button_key = f"remove_{created_at}_{index}"
+
+            cols[6].checkbox("Done", is_done, disabled=True, key=checkbox_key)
+            if cols[7].button("Remove", key=remove_button_key):
+                cursor.execute("DELETE FROM tasks WHERE created_at = ?", (created_at,))
+                conn.commit()
+                st.experimental_rerun()
+
+    # Form to add a new task
     st.subheader('Add a New Task:')
     created_at = st.date_input('Created at', value=datetime.datetime.now())
     created_by = st.text_input('Created by')
-    
     category_options = ['School', 'Personal', 'Side Project', 'Others']
     category = st.selectbox('Category', category_options)
-    
     task_name = st.text_input('Task name')
     description = st.text_input('Description')
-    
     urgency_options = ['High', 'Medium', 'Low']
     urgency = st.selectbox('Urgency', urgency_options)
-    
-    is_done = st.checkbox('Is done?')
-    
+    is_done = st.checkbox('Is done?', key='is_done_new_task')
+
     if st.button("Submit"):
-        new_task = TaskSettings(created_at=datetime.datetime.now(), created_by=created_by, category=category, task_name=task_name, description=description, urgency=urgency, is_done=is_done)
-        cursor.execute('INSERT INTO tasks VALUES(?, ?, ?, ?, ?, ?, ?)', (new_task.created_at, new_task.created_by, new_task.category, new_task.task_name, new_task.description, new_task.urgency, new_task.is_done))
+        new_task = TaskSettings(
+            created_at=created_at,
+            created_by=created_by,
+            category=category,
+            task_name=task_name,
+            description=description,
+            urgency=urgency,
+            is_done=is_done
+        )
+        cursor.execute('INSERT INTO tasks VALUES(?, ?, ?, ?, ?, ?, ?)', (
+            new_task.created_at, new_task.created_by, new_task.category,
+            new_task.task_name, new_task.description, new_task.urgency, new_task.is_done
+        ))
         conn.commit()
         st.write('New task added:', new_task)
-    
+        st.experimental_rerun()
 
-
- 
 if __name__ == "__main__":
     main()
